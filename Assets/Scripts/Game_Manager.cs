@@ -20,6 +20,16 @@ public class Game_Manager : MonoBehaviour
     List<Tile> tiles = new List<Tile>();
     List<Vector2> fruit_spots = new List<Vector2>();
 
+    private void OnEnable()
+    {
+        Signals.OnTilePressed += CheckBoard;
+    }
+
+    private void OnDisable()
+    {
+        Signals.OnTilePressed -= CheckBoard;
+    }
+
     void Awake()
     {
         if (instance == null)
@@ -48,7 +58,7 @@ public class Game_Manager : MonoBehaviour
     {
         // for 10/25 im just going to make something that works so i can create a generated campaign
         tiles_in_row = 7; // TODO: set some other way
-        num_fruits = 5;
+        num_fruits = 3;
 
         // create board by dimensions
         for (int i = 0;i < tiles_in_row; i++)
@@ -82,14 +92,24 @@ public class Game_Manager : MonoBehaviour
         for (int i = 0; i < num_fruits; i++)
         {
             Tile temp = tile_rows[(int)fruit_spots[i][0]].transform.GetChild((int)fruit_spots[i][1]).GetComponent<Tile>();
-            temp.SetFill(Tile_Colors.colors[i]);
-            temp.SetTested();
+            temp.SetFill(Tile_Properties.colors[i]);
+            temp.SetOccupied(true); // shouldnt need fruit locations because they are in colors anyway
         }
 
         for (int i = 0; i < num_fruits; i++) // paint 1 color at a time
         {
+            // reset non colored/fruits back to not tested
+            for (int x = 0; x < tiles_in_row; x++)
+            {
+                for (int y = 0; y < tiles_in_row; y++)
+                {
+                    Tile temp = tile_rows[x].transform.GetChild(y).GetComponent<Tile>();
+                    temp.SetTested(false);
+                }
+            }
+
             Vector2 currPos = fruit_spots[i];
-            int tries = 3;
+            int tries = num_fruits;
             while (tries > 0)
             {
                 Vector2 dir = Roll_Rand_Dir();
@@ -99,11 +119,12 @@ public class Game_Manager : MonoBehaviour
                 {
                     Vector2 testPos = currPos + dir;
                     Tile temp = tile_rows[(int)testPos[0]].transform.GetChild((int)testPos[1]).GetComponent<Tile>();
-                    if (!temp.GetTested())
+                    if (!temp.GetTested() && !temp.GetOccupied())
                     {
-                        temp.SetTested();
-                        temp.SetFill(Tile_Colors.colors[i]);
-                        tries = 3;
+                        temp.SetTested(true);
+                        temp.SetOccupied(true);
+                        temp.SetFill(Tile_Properties.colors[i]);
+                        tries = num_fruits;
                         currPos = testPos;
                         //break;
                     }
@@ -116,6 +137,11 @@ public class Game_Manager : MonoBehaviour
 
         // if random (like for pvp)
         //Rand_Seed();
+    }
+
+    void CheckBoard()
+    {
+        Debug.Log("Button pressed");
     }
 
     #region helpers

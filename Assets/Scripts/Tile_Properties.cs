@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public static class Tile_Colors
+public static class Tile_Properties
 {
     static Color TILE_COLOR_A = Color.red;
     static Color TILE_COLOR_B = Color.blue;
@@ -20,4 +20,6 @@ public static class Tile_Colors
         TILE_COLOR_F,
         TILE_COLOR_G
     };
+
+    static Texture2D orange = null;
 }
