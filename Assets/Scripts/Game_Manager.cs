@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -72,6 +73,8 @@ public class Game_Manager : MonoBehaviour
             }
         }
 
+        SetTilesPositions();
+
         // pick fruit king spots
         fruit_spots.Add(Roll_Numbers(0, num_fruits)); // 1st is auto
 
@@ -93,6 +96,7 @@ public class Game_Manager : MonoBehaviour
         {
             Tile temp = tile_rows[(int)fruit_spots[i][0]].transform.GetChild((int)fruit_spots[i][1]).GetComponent<Tile>();
             temp.SetFill(Tile_Properties.colors[i]);
+            temp.SetID(i);
             temp.SetOccupied(true); // shouldnt need fruit locations because they are in colors anyway
         }
 
@@ -124,6 +128,7 @@ public class Game_Manager : MonoBehaviour
                         temp.SetTested(true);
                         temp.SetOccupied(true);
                         temp.SetFill(Tile_Properties.colors[i]);
+                        temp.SetID(i);
                         tries = num_fruits;
                         currPos = testPos;
                         //break;
@@ -141,10 +146,91 @@ public class Game_Manager : MonoBehaviour
 
     void CheckBoard()
     {
-        Debug.Log("Button pressed");
+        // check which tiles have a guess in them
+        List<Tile> guessTiles = new List<Tile>();
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            tiles[i].SetWrongIconState(false); // reset them
+            if (tiles[i].GetGuessState())
+            {
+                guessTiles.Add(tiles[i]);
+            }
+        }
+
+        // see if guesses break any rules
+        bool brokeRules = false;
+        for (int i = 0; i < guessTiles.Count; i++)
+        {
+            for (int j = 0; j < guessTiles.Count; j++)
+            {
+                if (i == j)
+                    continue;
+
+                Vector2 nw = new Vector2(guessTiles[i].GetPos()[0] - 1, guessTiles[i].GetPos()[1] - 1);
+                Vector2 ne = new Vector2(guessTiles[i].GetPos()[0] + 1, guessTiles[i].GetPos()[1] - 1);
+                Vector2 sw = new Vector2(guessTiles[i].GetPos()[0] - 1, guessTiles[i].GetPos()[1] + 1);
+                Vector2 se = new Vector2(guessTiles[i].GetPos()[0] + 1, guessTiles[i].GetPos()[1] + 1);
+                if (guessTiles[i].GetID() == guessTiles[j].GetID())
+                {
+                    guessTiles[i].SetWrongIconState(true);
+                    guessTiles[j].SetWrongIconState(true);
+                }
+                else if (guessTiles[i].GetPos()[0] == guessTiles[j].GetPos()[0]) // hori
+                {
+                    for (int x = 0; x < tiles_in_row; x++)
+                    {
+                        tile_rows[(int)guessTiles[i].GetPos()[0]].transform.GetChild(x).GetComponent<Tile>().SetWrongIconState(true);
+                    }
+                }
+                else if (guessTiles[i].GetPos()[1] == guessTiles[j].GetPos()[1]) // vert
+                {
+                    for (int x = 0; x < tiles_in_row; x++)
+                    {
+                        tile_rows[x].transform.GetChild((int)guessTiles[i].GetPos()[1]).GetComponent<Tile>().SetWrongIconState(true);
+                    }
+                }
+                else if ((nw == guessTiles[j].GetPos() || sw == guessTiles[j].GetPos() || ne == guessTiles[j].GetPos() || se == guessTiles[j].GetPos())) // diag
+                {
+                    Debug.Log("do diag dawg");
+                }
+                else
+                {
+                    // didnt break any rules
+                    continue;
+                }
+
+                // check if there are multiple crowns placed in the same color that passed otherwise
+
+                // whatever the ifs do together we'll do here
+                brokeRules = true;
+            }
+        }
+
+        // if they dont break rules, see if they pass the test
+        // *note* they dont need to be original but also check they are colored (occupied)
+        if (guessTiles.Count == num_fruits && !brokeRules)
+        {
+            IEnumerable<int> ids = guessTiles.Select(t => t.GetID()).ToList();
+            IEnumerable<int> uniqueIDS = ids.Distinct().ToList();
+            if (uniqueIDS.Count() == guessTiles.Count)
+            {
+                Debug.Log("yay?");
+            }
+        }
     }
 
     #region helpers
+    void SetTilesPositions()
+    {
+        for (int i = 0; i < tile_rows.Count; i++)
+        {
+            for (int j = 0; j < tile_rows.Count; j++)
+            {
+                tile_rows[i].transform.GetChild(j).GetComponent<Tile>().SetPos(new Vector2(i, j));
+            }
+        }
+    }
+
     Vector2 Roll_Numbers(int min, int max)
     {
         int x = Random.Range(min, max);
