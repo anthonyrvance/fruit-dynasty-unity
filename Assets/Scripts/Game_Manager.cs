@@ -191,7 +191,8 @@ public class Game_Manager : MonoBehaviour
                 }
                 else if ((nw == guessTiles[j].GetPos() || sw == guessTiles[j].GetPos() || ne == guessTiles[j].GetPos() || se == guessTiles[j].GetPos())) // diag
                 {
-                    Debug.Log("do diag dawg");
+                    guessTiles[i].SetWrongIconState(true);
+                    guessTiles[j].SetWrongIconState(true);
                 }
                 else
                 {
